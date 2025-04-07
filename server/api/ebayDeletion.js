@@ -1,15 +1,15 @@
-import express from 'express';
-const router = express.Router();
-
-const VERIFICATION_TOKEN = 'zonecard-token-verify-2025-secure-production-abc123';
-
 router.post('/ebay/deletion', (req, res) => {
   console.log('🔔 Received eBay Deletion Notification');
+
+  // Log the full request
+  console.log('HEADERS:', req.headers);
+  console.log('BODY:', req.body);
+
+  const token = 'zonecard-token-verify-2025-secure-production-abc123';
+
   res.writeHead(200, {
     'Content-Type': 'text/plain',
-    'Content-Length': Buffer.byteLength(VERIFICATION_TOKEN),
+    'Content-Length': Buffer.byteLength(token),
   });
-  res.end(VERIFICATION_TOKEN);
+  res.end(token);
 });
-
-export default router;
