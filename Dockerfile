@@ -1,26 +1,29 @@
-# Use official Node image
+# Use official lightweight Node image
 FROM node:18-alpine as builder
 
-# Set working directory to /app
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json from client folder
+# Copy package.json and lockfile from client
 COPY client/package*.json ./
 
-# Install dependencies
+# Install frontend dependencies
 RUN npm install
 
-# Copy all frontend files from client folder into the container
+# Copy all frontend source files
 COPY client/ .
 
-# Build the React frontend
+# Build using Vite (relies on local node_modules/.bin/vite)
 RUN npm run build
 
-# Install serve to serve the static build
+# Install serve globally
 RUN npm install -g serve
 
-# Expose port
+# Set the directory where the build output lives
+WORKDIR /app
+
+# Expose the port serve will run on
 EXPOSE 3000
 
-# Start the app
+# Serve the static site from build/ folder
 CMD ["serve", "-s", "build", "-l", "3000"]
