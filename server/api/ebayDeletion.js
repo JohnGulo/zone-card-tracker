@@ -1,9 +1,13 @@
 router.post('/ebay/deletion', (req, res) => {
   console.log('🔔 Received eBay Deletion Notification');
 
-  // Log the full request
-  console.log('HEADERS:', req.headers);
-  console.log('BODY:', req.body);
+  // Safely log request data
+  try {
+    console.log('HEADERS:', req.headers);
+    console.log('BODY:', JSON.stringify(req.body || {}));
+  } catch (err) {
+    console.error('Error logging request body:', err);
+  }
 
   const token = 'zonecard-token-verify-2025-secure-production-abc123';
 
