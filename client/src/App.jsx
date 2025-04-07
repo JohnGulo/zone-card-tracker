@@ -18,54 +18,59 @@ export default function App() {
   const [prices, setPrices] = useState([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const mockPrices = [4.99, 5.99, 6.49, 7.00, 5.25, 6.10];
+  const [enableAI, setEnableAI] = useState(false);
 
   const handleGenerate = async () => {
-  if (!cardName) return;
+    if (!cardName) return;
 
-  setLoading(true);
-  setSummary('');
-  setPrices([]);
+    setLoading(true);
+    setSummary('');
+    setPrices([]);
 
-  try {
-    // Step 1: Fetch listings from your backend
-    const searchRes = await fetch('http://localhost:5000/api/search?cardName=' + encodeURIComponent(cardName));
-    const searchData = await searchRes.json();
+    try {
+      const searchRes = await fetch(
+        'https://zone-card-tracker-production.up.railway.app/api/search?cardName=' +
+          encodeURIComponent(cardName)
+      );
+      const searchData = await searchRes.json();
 
-    const extractedPrices = searchData.listings
-      .map(item => parseFloat(item.price))
-      .filter(price => !isNaN(price));
+      const extractedPrices = searchData.listings
+        .map((item) => parseFloat(item.price))
+        .filter((price) => !isNaN(price));
 
-    setPrices(extractedPrices);
+      setPrices(extractedPrices);
 
-    // Step 2: Send prices to OpenAI summary endpoint
-    const summaryRes = await fetch('http://localhost:5000/api/generate-summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cardName, prices: extractedPrices })
-    });
+      if (enableAI) {
+        const summaryRes = await fetch(
+          'https://zone-card-tracker-production.up.railway.app/api/generate-summary',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cardName, prices: extractedPrices })
+          }
+        );
+        const summaryData = await summaryRes.json();
+        setSummary(summaryData.summary || 'No summary returned.');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setSummary('Something went wrong. Please try again.');
+    }
 
-    const summaryData = await summaryRes.json();
-    setSummary(summaryData.summary || 'No summary returned.');
-  } catch (err) {
-    console.error('Error:', err);
-    setSummary('Something went wrong. Please try again.');
-  }
-
-  setLoading(false);
-};
-
+    setLoading(false);
+  };
 
   const chartData = {
     labels: prices.map((_, i) => `Listing ${i + 1}`),
-    datasets: [{
-      label: 'Price ($)',
-      data: prices,
-      borderColor: 'teal',
-      backgroundColor: 'lightblue',
-      tension: 0.3
-    }]
+    datasets: [
+      {
+        label: 'Price ($)',
+        data: prices,
+        borderColor: 'teal',
+        backgroundColor: 'lightblue',
+        tension: 0.3
+      }
+    ]
   };
 
   return (
@@ -78,8 +83,18 @@ export default function App() {
         onChange={(e) => setCardName(e.target.value)}
         style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
       />
+      <div style={{ marginBottom: '20px' }}>
+        <label>
+          <input
+            type="checkbox"
+            checked={enableAI}
+            onChange={() => setEnableAI(!enableAI)}
+          />
+          Enable AI-powered summary
+        </label>
+      </div>
       <button onClick={handleGenerate} style={{ padding: '10px 20px' }}>
-        Generate AI Summary
+        Track Prices
       </button>
 
       {prices.length > 0 && (
@@ -88,7 +103,14 @@ export default function App() {
             <Line data={chartData} />
           </div>
 
-          <div style={{ marginTop: '20px', backgroundColor: '#eef', padding: '15px', borderRadius: '5px' }}>
+          <div
+            style={{
+              marginTop: '20px',
+              backgroundColor: '#eef',
+              padding: '15px',
+              borderRadius: '5px'
+            }}
+          >
             <h3>AI-Powered Summary:</h3>
             {loading ? <p>Generating summary...</p> : <p>{summary}</p>}
           </div>
