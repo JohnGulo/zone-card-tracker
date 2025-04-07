@@ -1,43 +1,33 @@
 import express from 'express';
-import axios from 'axios';
+import fetch from 'node-fetch'; // or native fetch in newer Node versions
 
 const router = express.Router();
 
+const EBAY_ACCESS_TOKEN = process.env.EBAY_ACCESS_TOKEN; // Securely loaded from .env or Railway
+
 router.get('/search', async (req, res) => {
-  const { cardName, count } = req.query;
-
-  if (!cardName) {
-    return res.status(400).json({ error: 'Card name is required.' });
-  }
-
-  const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
-  const params = {
-    'OPERATION-NAME': 'findItemsByKeywords',
-    'SERVICE-VERSION': '1.0.0',
-    'SECURITY-APPNAME': process.env.EBAY_APP_ID,
-    'RESPONSE-DATA-FORMAT': 'JSON',
-    'REST-PAYLOAD': true,
-    'keywords': cardName,
-    'paginationInput.entriesPerPage': count || 100,
-    'outputSelector': 'SellerInfo',
-  };
+  const cardName = req.query.cardName;
 
   try {
-    const response = await axios.get(endpoint, { params });
-    const results = response.data.findItemsByKeywordsResponse?.[0]?.searchResult?.[0]?.item || [];
+    const response = await fetch(`https://api.sandbox.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=5`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${EBAY_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      }
+    });
 
-    const listings = results.map((item) => ({
-      title: item.title?.[0] || '',
-      price: item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 'N/A',
-      condition: item.condition?.[0]?.conditionDisplayName?.[0] || 'Unknown',
-      image: item.galleryURL?.[0] || '',
-      viewItemURL: item.viewItemURL?.[0] || '',
-    }));
+    const data = await response.json();
+
+    const listings = data.itemSummaries?.map(item => ({
+      title: item.title,
+      price: item.price?.value || '0.00'
+    })) || [];
 
     res.json({ listings });
-  } catch (err) {
-    console.error('eBay fetch error:', err.message);
-    res.status(500).json({ error: 'Failed to fetch data from eBay.' });
+  } catch (error) {
+    console.error('Error fetching eBay data:', error);
+    res.status(500).json({ error: 'Failed to fetch data from eBay' });
   }
 });
 
