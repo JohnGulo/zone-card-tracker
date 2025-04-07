@@ -1,7 +1,7 @@
 import express from 'express';
 const router = express.Router();
 
-const VERIFICATION_TOKEN = 'zonecard-token-verify-2025-secure-production-abc123';
+const VERIFICATION_TOKEN = 'zonecard-token-verify-2025-reset-v3-prod-pass';
 
 router.post('/ebay/deletion', (req, res) => {
   console.log('🔔 Received eBay Deletion Notification');
