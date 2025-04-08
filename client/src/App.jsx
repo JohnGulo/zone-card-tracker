@@ -1,4 +1,3 @@
-// App.jsx
 import React, { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -20,10 +19,10 @@ export default function App() {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [enableAI, setEnableAI] = useState(false);
-  const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
   const [gradedOnly, setGradedOnly] = useState(false);
   const [autosOnly, setAutosOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState('EndTimeSoonest');
+  const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
   const handleGenerate = async () => {
     if (!cardName) return;
@@ -34,10 +33,15 @@ export default function App() {
     setAverages({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
     try {
+      const queryParams = new URLSearchParams({
+        cardName,
+        gradedOnly,
+        autosOnly,
+        sortOrder
+      });
+
       const res = await fetch(
-        `https://zone-card-tracker-production.up.railway.app/api/search?cardName=${encodeURIComponent(
-          cardName
-        )}&gradedOnly=${gradedOnly}&autosOnly=${autosOnly}&sortOrder=${sortOrder}`
+        `https://zone-card-tracker-production.up.railway.app/api/search?${queryParams}`
       );
       const data = await res.json();
       setListings(data.listings || []);
@@ -85,38 +89,40 @@ export default function App() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 900, margin: '0 auto', padding: '20px' }}>
+    <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px' }}>
       <h1>Zone Card Tracker</h1>
 
       <label htmlFor="cardInput" style={{ fontWeight: 'bold' }}>Enter Card Name</label>
       <input
         id="cardInput"
         type="text"
-        placeholder="e.g. 2024 Jackson Holliday Topps Chrome Auto"
+        placeholder="e.g. 2023 Topps Chrome Luis Robert"
         value={cardName}
         onChange={(e) => setCardName(e.target.value)}
         style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
       />
 
-      <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '10px' }}>
+        <label><input type="checkbox" checked={gradedOnly} onChange={() => setGradedOnly(!gradedOnly)} /> Graded Cards Only</label>
+        <label><input type="checkbox" checked={autosOnly} onChange={() => setAutosOnly(!autosOnly)} /> Autos Only</label>
         <label>
-          <input type="checkbox" checked={gradedOnly} onChange={() => setGradedOnly(!gradedOnly)} />
-          Graded Cards Only
-        </label>
-        <label>
-          <input type="checkbox" checked={autosOnly} onChange={() => setAutosOnly(!autosOnly)} />
-          Autos Only
-        </label>
-        <label>
-          Sort By:
+          Sort By:{' '}
           <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
             <option value="EndTimeSoonest">End Time Soonest</option>
+            <option value="EndTimeLatest">End Time Latest</option>
             <option value="PricePlusShippingHighest">Price: High to Low</option>
             <option value="PricePlusShippingLowest">Price: Low to High</option>
           </select>
         </label>
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
         <label>
-          <input type="checkbox" checked={enableAI} onChange={() => setEnableAI(!enableAI)} />
+          <input
+            type="checkbox"
+            checked={enableAI}
+            onChange={() => setEnableAI(!enableAI)}
+          />{' '}
           Enable AI-powered summary
         </label>
       </div>
@@ -184,28 +190,22 @@ export default function App() {
               <li
                 key={idx}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '15px',
                   padding: '10px',
                   marginBottom: '10px',
                   border: '1px solid #ccc',
-                  borderRadius: '5px'
+                  borderRadius: '5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '15px'
                 }}
               >
-                {item.image && (
-                  <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    <img src={item.image} alt="eBay" style={{ width: '80px', height: 'auto', borderRadius: '4px' }} />
-                  </a>
-                )}
+                {item.image && <img src={item.image} alt="card" style={{ width: '80px', height: 'auto' }} />}
                 <div>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    <strong>{item.title}</strong>
-                  </a>
-                  <br />
-                  <span style={{ fontSize: '20px', color: 'green', fontWeight: 'bold' }}>
+                  <strong>{item.title}</strong>
+                  <div style={{ color: 'green', fontSize: '20px', fontWeight: 'bold' }}>
                     ${item.price}
-                  </span>
+                  </div>
+                  {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer">View on eBay</a>}
                 </div>
               </li>
             ))}
