@@ -19,7 +19,7 @@ export async function getEbayAccessToken() {
       'Authorization': `Basic ${encoded}`,
       'Content-Type': 'application/x-www-form-urlencoded'
     },
-    body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope/buy.browse'
+    body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope'
   });
 
   const data = await response.json();
