@@ -1,17 +1,4 @@
 import React, { useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
-  Title,
-  CategoryScale,
-  Tooltip,
-  Legend
-} from 'chart.js';
-
-ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale, Tooltip, Legend);
 
 export default function App() {
   const [cardName, setCardName] = useState('');
@@ -79,21 +66,7 @@ export default function App() {
     setLoading(false);
   };
 
-  const chartPrices = listings.slice(0, 5).map((item) => parseFloat(item.price) || 0);
-  const detailedListings = listings.slice(5);
-
-  const chartData = {
-    labels: chartPrices.map((_, i) => `Sale ${i + 1}`),
-    datasets: [
-      {
-        label: 'Last 5 Sale Prices ($)',
-        data: chartPrices,
-        borderColor: 'teal',
-        backgroundColor: 'lightblue',
-        tension: 0.3
-      }
-    ]
-  };
+  const detailedListings = listings;
 
   return (
     <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px' }}>
@@ -148,10 +121,8 @@ export default function App() {
         </div>
       )}
 
-      {chartPrices.length > 0 && (
+      {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
         <div style={{ marginTop: '30px' }}>
-          <Line data={chartData} />
-
           <h3 style={{ marginTop: '25px', textAlign: 'center' }}>Sold Market Summary</h3>
           <div
             style={{
