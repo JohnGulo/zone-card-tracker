@@ -5,16 +5,26 @@ const router = express.Router();
 
 router.get('/search', async (req, res) => {
   const cardName = req.query.cardName;
-
-  const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
-  const ebayAppId = process.env.EBAY_CLIENT_ID; // This is your AppID, not the OAuth token
+  const ebayAppId = process.env.EBAY_CLIENT_ID;
 
   try {
-    const response = await fetch(`${endpoint}?OPERATION-NAME=findCompletedItems&SERVICE-VERSION=1.0.0&SECURITY-APPNAME=${ebayAppId}&RESPONSE-DATA-FORMAT=JSON&REST-PAYLOAD&keywords=${encodeURIComponent(cardName)}&itemFilter(0).name=SoldItemsOnly&itemFilter(0).value=true&sortOrder=EndTimeSoonest&paginationInput.entriesPerPage=50`, {
-      method: 'GET'
+    const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
+    const params = new URLSearchParams({
+      'OPERATION-NAME': 'findCompletedItems',
+      'SERVICE-VERSION': '1.0.0',
+      'SECURITY-APPNAME': ebayAppId,
+      'RESPONSE-DATA-FORMAT': 'JSON',
+      'REST-PAYLOAD': 'true',
+      'keywords': cardName,
+      'itemFilter(0).name': 'SoldItemsOnly',
+      'itemFilter(0).value': 'true',
+      'paginationInput.entriesPerPage': '50',
+      'sortOrder': 'EndTimeSoonest'
     });
 
+    const response = await fetch(`${endpoint}?${params}`);
     const data = await response.json();
+
     const items = data.findCompletedItems?.searchResult?.[0]?.item || [];
 
     const rawPrices = [];
@@ -23,7 +33,7 @@ router.get('/search', async (req, res) => {
 
     const listings = items.map(item => {
       const title = item.title[0].toLowerCase();
-      const price = parseFloat(item.sellingStatus[0].currentPrice[0].__value__ || 0);
+      const price = parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0);
 
       if (!isNaN(price)) {
         if (title.includes('psa 10')) psa10Prices.push(price);
@@ -47,10 +57,9 @@ router.get('/search', async (req, res) => {
         psa10: avg(psa10Prices)
       }
     });
-
   } catch (error) {
     console.error('❌ Error fetching eBay sold data:', error.message);
-    res.status(500).json({ error: 'Failed to fetch sold data from eBay' });
+    res.status(500).json({ error: 'Failed to fetch sold listing data from eBay.' });
   }
 });
 
