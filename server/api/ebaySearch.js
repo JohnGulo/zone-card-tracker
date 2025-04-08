@@ -1,6 +1,6 @@
 import express from 'express';
 import fetch from 'node-fetch';
-import { getEbayAccessToken } from './ebayAuth.js';
+import { getEbayAccessToken } from './utils/getEbayAccessToken.js';
 
 const router = express.Router();
 
@@ -8,14 +8,14 @@ router.get('/search', async (req, res) => {
   const cardName = req.query.cardName;
 
   try {
-    const accessToken = await getEbayAccessToken();
+    const EBAY_ACCESS_TOKEN = await getEbayAccessToken();
 
     const response = await fetch(
       `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=100&filter=conditions:{1000}`,
       {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${EBAY_ACCESS_TOKEN}`,
           'Content-Type': 'application/json'
         }
       }
