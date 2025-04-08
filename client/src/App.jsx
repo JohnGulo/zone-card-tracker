@@ -81,14 +81,18 @@ export default function App() {
 
   return (
     <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px' }}>
-      <h1>Card Pricing Tool</h1>
+      <h1>Zone Card Tracker</h1>
+
+      <label htmlFor="cardInput" style={{ fontWeight: 'bold' }}>Enter Card Name</label>
       <input
+        id="cardInput"
         type="text"
-        placeholder="Enter card name"
+        placeholder="e.g. 2023 Topps Chrome Luis Robert"
         value={cardName}
         onChange={(e) => setCardName(e.target.value)}
         style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
       />
+
       <div style={{ marginBottom: '20px' }}>
         <label>
           <input
@@ -99,17 +103,23 @@ export default function App() {
           Enable AI-powered summary
         </label>
       </div>
-      <button onClick={handleGenerate} style={{ padding: '10px 20px' }}>
-        Track Prices
+
+      <button
+        onClick={handleGenerate}
+        style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
+        disabled={loading}
+      >
+        {loading ? 'Loading...' : (<><span>Track Prices</span> <span style={{ fontSize: '18px' }}>📈</span></>)}
       </button>
 
       {chartPrices.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <Line data={chartData} />
 
+          <h3 style={{ marginTop: '25px', textAlign: 'center' }}>Sold Market Summary</h3>
           <div
             style={{
-              marginTop: '30px',
+              marginTop: '10px',
               display: 'flex',
               justifyContent: 'space-around',
               alignItems: 'center',
@@ -151,7 +161,7 @@ export default function App() {
 
       {detailedListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h3>Recent Listings</h3>
+          <h3>Sold Market Data</h3>
           <ul style={{ padding: 0, listStyle: 'none' }}>
             {detailedListings.map((item, idx) => (
               <li
