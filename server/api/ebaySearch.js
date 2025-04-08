@@ -1,6 +1,6 @@
 import express from 'express';
 import fetch from 'node-fetch';
-import { getEbayAccessToken } from './utils/getEbayAccessToken.js';
+import { getEbayAccessToken } from './getEbayAccessToken.js';
 
 const router = express.Router();
 
