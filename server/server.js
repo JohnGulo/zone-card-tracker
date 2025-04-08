@@ -9,7 +9,9 @@ console.log("OPENAI_API_KEY from .env:", process.env.OPENAI_API_KEY);
 
 const app = express();
 app.use(cors({
-  origin: 'https://zone-card-tracker-client-production.up.railway.app'
+  origin: '*', // use '*' temporarily to confirm if CORS is the actual blocker
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
