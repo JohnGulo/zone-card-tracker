@@ -8,9 +8,8 @@ router.get('/search', async (req, res) => {
   const ebayAppId = process.env.EBAY_CLIENT_ID;
 
   try {
-    const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
+    const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findCompletedItems';
     const params = new URLSearchParams({
-      'OPERATION-NAME': 'findCompletedItems',
       'SERVICE-VERSION': '1.13.0',
       'SECURITY-APPNAME': ebayAppId,
       'RESPONSE-DATA-FORMAT': 'JSON',
@@ -22,7 +21,7 @@ router.get('/search', async (req, res) => {
       'itemFilter(0).value': 'true'
     });
 
-    const response = await fetch(`${endpoint}?${params}`);
+    const response = await fetch(`${endpoint}&${params}`);
     const data = await response.json();
 
     const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
