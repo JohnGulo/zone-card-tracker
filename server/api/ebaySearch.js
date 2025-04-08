@@ -11,7 +11,7 @@ router.get('/search', async (req, res) => {
     const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
     const params = new URLSearchParams({
       'OPERATION-NAME': 'findCompletedItems',
-      'SERVICE-VERSION': '1.0.0',
+      'SERVICE-VERSION': '1.13.0',
       'SECURITY-APPNAME': ebayAppId,
       'RESPONSE-DATA-FORMAT': 'JSON',
       'REST-PAYLOAD': 'true',
@@ -25,7 +25,7 @@ router.get('/search', async (req, res) => {
     const response = await fetch(`${endpoint}?${params}`);
     const data = await response.json();
 
-    const items = data.findCompletedItems?.searchResult?.[0]?.item || [];
+    const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
 
     const rawPrices = [];
     const psa9Prices = [];
