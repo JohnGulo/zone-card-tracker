@@ -23,6 +23,7 @@ export default function App() {
   const [autosOnly, setAutosOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState('EndTimeSoonest');
   const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleGenerate = async () => {
     if (!cardName) return;
@@ -30,6 +31,7 @@ export default function App() {
     setLoading(true);
     setSummary('');
     setListings([]);
+    setErrorMsg('');
     setAverages({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
     try {
@@ -44,8 +46,13 @@ export default function App() {
         `https://zone-card-tracker-production.up.railway.app/api/search?${queryParams}`
       );
       const data = await res.json();
-      setListings(data.listings || []);
-      setAverages(data.averages || { raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
+
+      if (!data.listings || data.listings.length === 0) {
+        setErrorMsg("No results found. Please check the card name spelling or try another search.");
+      } else {
+        setListings(data.listings);
+        setAverages(data.averages);
+      }
 
       const extractedPrices = data.listings
         .slice(0, 5)
@@ -66,7 +73,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Error:', err);
-      setSummary('Something went wrong. Please try again.');
+      setErrorMsg('Something went wrong. Please try again later.');
     }
 
     setLoading(false);
@@ -134,6 +141,12 @@ export default function App() {
       >
         {loading ? 'Loading...' : (<><span>Track Prices</span> <span style={{ fontSize: '18px' }}>📈</span></>)}
       </button>
+
+      {errorMsg && (
+        <div style={{ marginTop: '20px', color: 'red', fontWeight: 'bold' }}>
+          {errorMsg}
+        </div>
+      )}
 
       {chartPrices.length > 0 && (
         <div style={{ marginTop: '30px' }}>
