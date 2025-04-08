@@ -32,7 +32,7 @@ export default function App() {
     try {
       const res = await fetch(
         'https://zone-card-tracker-production.up.railway.app/api/search?cardName=' +
-          encodeURIComponent(cardName)
+          encodeURIComponent(cardName) + '&limit=500'
       );
       const data = await res.json();
       setListings(data.listings || []);

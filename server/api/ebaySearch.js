@@ -1,17 +1,16 @@
-// server/api/ebaySearch.js
 import express from 'express';
 import fetch from 'node-fetch';
 
 const router = express.Router();
-
 const EBAY_ACCESS_TOKEN = process.env.EBAY_ACCESS_TOKEN;
 
 router.get('/search', async (req, res) => {
   const cardName = req.query.cardName;
+  const limit = parseInt(req.query.limit) || 100;
 
   try {
     const response = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=100&filter=conditions:{1000}`,
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=${limit}&filter=conditions:{1000}`,
       {
         method: 'GET',
         headers: {
