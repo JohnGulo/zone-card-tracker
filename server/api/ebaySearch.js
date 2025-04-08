@@ -24,6 +24,8 @@ router.get('/search', async (req, res) => {
     const response = await fetch(`${endpoint}&${params}`);
     const data = await response.json();
 
+    console.log("📦 Raw eBay response:", JSON.stringify(data, null, 2));
+
     const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
 
     if (!items || items.length === 0) {
