@@ -37,8 +37,8 @@ export default function App() {
     try {
       const queryParams = new URLSearchParams({
         cardName,
-        gradedOnly,
-        autosOnly,
+        gradedOnly: gradedOnly.toString(),
+        autosOnly: autosOnly.toString(),
         sortOrder
       });
 

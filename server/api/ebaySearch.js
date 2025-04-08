@@ -4,15 +4,11 @@ import fetch from 'node-fetch';
 const router = express.Router();
 
 router.get('/search', async (req, res) => {
-  const cardName = req.query.cardName;
-  const gradedOnly = req.query.gradedOnly === 'true';
-  const autosOnly = req.query.autosOnly === 'true';
-  const sortOrder = req.query.sortOrder || 'EndTimeSoonest';
+  const { cardName, gradedOnly, autosOnly, sortOrder } = req.query;
   const ebayAppId = process.env.EBAY_CLIENT_ID;
 
   try {
     const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
-
     const params = new URLSearchParams({
       'OPERATION-NAME': 'findCompletedItems',
       'SERVICE-VERSION': '1.13.0',
@@ -20,13 +16,11 @@ router.get('/search', async (req, res) => {
       'RESPONSE-DATA-FORMAT': 'JSON',
       'REST-PAYLOAD': 'true',
       'keywords': cardName,
-      'paginationInput.entriesPerPage': '100',
-      'sortOrder': sortOrder
+      'paginationInput.entriesPerPage': '50',
+      'sortOrder': sortOrder || 'EndTimeSoonest',
+      'itemFilter(0).name': 'SoldItemsOnly',
+      'itemFilter(0).value': 'true'
     });
-
-    // Add item filter for sold listings
-    params.append('itemFilter(0).name', 'SoldItemsOnly');
-    params.append('itemFilter(0).value', 'true');
 
     const response = await fetch(`${endpoint}?${params}`);
     const data = await response.json();
@@ -34,7 +28,7 @@ router.get('/search', async (req, res) => {
     const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
 
     if (!items || items.length === 0) {
-      console.warn("⚠️ No items found for card:", cardName);
+      console.warn("\u26A0\uFE0F No items found for card:", cardName);
       return res.json({
         listings: [],
         averages: {
@@ -50,31 +44,37 @@ router.get('/search', async (req, res) => {
     const psa10Prices = [];
 
     const listings = items
-      .filter(item => {
-        const title = item.title?.[0]?.toLowerCase() || '';
-        const isGraded = title.includes('psa') || title.includes('bgs') || title.includes('sgc');
-        const isAuto = title.includes('auto');
-
-        return (!gradedOnly || isGraded) && (!autosOnly || isAuto);
-      })
       .map(item => {
-        const title = item.title?.[0] || '';
-        const lowerTitle = title.toLowerCase();
+        const title = item.title?.[0]?.toLowerCase() || '';
         const price = parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0);
+        const image = item.galleryURL?.[0];
+        const url = item.viewItemURL?.[0];
+
+        const isPSA10 = title.includes('psa 10');
+        const isPSA9 = title.includes('psa 9');
+        const isRaw = !title.includes('psa') && !title.includes('bgs') && !title.includes('sgc');
+        const isAuto = title.includes('auto');
+        const isGraded = title.includes('psa') || title.includes('bgs') || title.includes('sgc');
 
         if (!isNaN(price)) {
-          if (lowerTitle.includes('psa 10')) psa10Prices.push(price);
-          else if (lowerTitle.includes('psa 9')) psa9Prices.push(price);
-          else if (!lowerTitle.includes('psa') && !lowerTitle.includes('bgs') && !lowerTitle.includes('sgc')) rawPrices.push(price);
+          if (isPSA10) psa10Prices.push(price);
+          else if (isPSA9) psa9Prices.push(price);
+          else if (isRaw) rawPrices.push(price);
+        }
+
+        // Apply grading/autograph filter
+        if ((gradedOnly === 'true' && !isGraded) || (autosOnly === 'true' && !isAuto)) {
+          return null;
         }
 
         return {
-          title,
+          title: item.title?.[0] || '',
           price: price.toFixed(2),
-          image: item.galleryURL?.[0] || '',
-          url: item.viewItemURL?.[0] || ''
+          image,
+          url
         };
-      });
+      })
+      .filter(Boolean);
 
     const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
 
