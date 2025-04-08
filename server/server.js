@@ -8,7 +8,9 @@ import ebayDeletion from './api/ebayDeletion.js';
 console.log("OPENAI_API_KEY from .env:", process.env.OPENAI_API_KEY);
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: 'https://zone-card-tracker-client-production.up.railway.app'
+}));
 app.use(express.json());
 
 app.use('/api', ebaySearch);
