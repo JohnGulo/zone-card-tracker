@@ -19,6 +19,8 @@ export default function App() {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [enableAI, setEnableAI] = useState(false);
+  const [firstFive, setFirstFive] = useState([]);
+  const [otherListings, setOtherListings] = useState([]);
 
   const handleGenerate = async () => {
     if (!cardName) return;
@@ -26,6 +28,8 @@ export default function App() {
     setLoading(true);
     setSummary('');
     setPrices([]);
+    setFirstFive([]);
+    setOtherListings([]);
 
     try {
       const searchRes = await fetch(
@@ -34,11 +38,16 @@ export default function App() {
       );
       const searchData = await searchRes.json();
 
-      const extractedPrices = searchData.listings
+      const listings = searchData.listings || [];
+
+      const extractedPrices = listings
+        .slice(0, 5)
         .map((item) => parseFloat(item.price))
         .filter((price) => !isNaN(price));
 
       setPrices(extractedPrices);
+      setFirstFive(listings.slice(0, 5));
+      setOtherListings(listings.slice(5));
 
       if (enableAI) {
         const summaryRes = await fetch(
@@ -74,7 +83,7 @@ export default function App() {
   };
 
   return (
-    <div className="container">
+    <div className="container" style={{ maxWidth: '800px', margin: 'auto' }}>
       <h1>Card Pricing Tool</h1>
       <input
         type="text"
@@ -115,6 +124,28 @@ export default function App() {
             {loading ? <p>Generating summary...</p> : <p>{summary}</p>}
           </div>
         </>
+      )}
+
+      {otherListings.length > 0 && (
+        <div style={{ marginTop: '40px' }}>
+          <h3>More Recent Sales</h3>
+          {otherListings.map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                borderBottom: '1px solid #ccc',
+                padding: '10px 0'
+              }}
+            >
+              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                <strong>{item.title}</strong>
+              </a>
+              <p style={{ margin: 0 }}>
+                💰 ${item.price.toFixed(2)} — {item.condition}
+              </p>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
