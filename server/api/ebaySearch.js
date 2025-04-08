@@ -1,5 +1,7 @@
+// server/api/ebaySearch.js
 import express from 'express';
 import fetch from 'node-fetch';
+
 const router = express.Router();
 
 const EBAY_ACCESS_TOKEN = process.env.EBAY_ACCESS_TOKEN;
@@ -9,30 +11,51 @@ router.get('/search', async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&filter=soldItemsOnly:true&limit=25`,
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=100&filter=conditions:{1000}`,
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${EBAY_ACCESS_TOKEN}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${EBAY_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
         }
       }
     );
 
     const data = await response.json();
 
-    const listings = (data.itemSummaries || []).map(item => ({
-      title: item.title,
-      price: parseFloat(item.price?.value || 0),
-      condition: item.condition || 'N/A',
-      url: item.itemWebUrl,
-      image: item.image?.imageUrl || ''
-    }));
+    const rawPrices = [];
+    const psa9Prices = [];
+    const psa10Prices = [];
 
-    res.json({ listings });
-  } catch (err) {
-    console.error('❌ eBay API error:', err);
-    res.status(500).json({ error: 'Failed to fetch eBay data' });
+    const listings = data.itemSummaries?.map(item => {
+      const title = item.title.toLowerCase();
+      const price = parseFloat(item.price?.value || 0);
+
+      if (!isNaN(price)) {
+        if (title.includes('psa 10')) psa10Prices.push(price);
+        else if (title.includes('psa 9')) psa9Prices.push(price);
+        else if (!title.includes('psa') && !title.includes('bgs')) rawPrices.push(price);
+      }
+
+      return {
+        title: item.title,
+        price: price.toFixed(2)
+      };
+    }) || [];
+
+    const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
+
+    res.json({
+      listings,
+      averages: {
+        raw: avg(rawPrices),
+        psa9: avg(psa9Prices),
+        psa10: avg(psa10Prices)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching eBay data:', error);
+    res.status(500).json({ error: 'Failed to fetch data from eBay' });
   }
 });
 

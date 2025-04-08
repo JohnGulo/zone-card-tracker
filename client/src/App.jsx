@@ -15,17 +15,19 @@ ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale, T
 
 export default function App() {
   const [cardName, setCardName] = useState('');
-  const [allListings, setAllListings] = useState([]);
+  const [listings, setListings] = useState([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [enableAI, setEnableAI] = useState(false);
+  const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
   const handleGenerate = async () => {
     if (!cardName) return;
 
     setLoading(true);
     setSummary('');
-    setAllListings([]);
+    setListings([]);
+    setAverages({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
     try {
       const res = await fetch(
@@ -33,10 +35,11 @@ export default function App() {
           encodeURIComponent(cardName)
       );
       const data = await res.json();
-
-      setAllListings(data.listings || []);
+      setListings(data.listings || []);
+      setAverages(data.averages || { raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
       const extractedPrices = data.listings
+        .slice(0, 5)
         .map((item) => parseFloat(item.price))
         .filter((price) => !isNaN(price));
 
@@ -60,8 +63,8 @@ export default function App() {
     setLoading(false);
   };
 
-  const chartPrices = allListings.slice(0, 5).map((item) => parseFloat(item.price) || 0);
-  const detailedListings = allListings.slice(5, 25);
+  const chartPrices = listings.slice(0, 5).map((item) => parseFloat(item.price) || 0);
+  const detailedListings = listings.slice(5);
 
   const chartData = {
     labels: chartPrices.map((_, i) => `Sale ${i + 1}`),
@@ -103,6 +106,32 @@ export default function App() {
       {chartPrices.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <Line data={chartData} />
+
+          <div
+            style={{
+              marginTop: '30px',
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              backgroundColor: '#f4f4f4',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '1px solid #ccc'
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>Raw Avg</div>
+              <div style={{ fontSize: '22px', color: '#333' }}>${averages.raw}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>PSA 9 Avg</div>
+              <div style={{ fontSize: '22px', color: '#444' }}>${averages.psa9}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#d6336c' }}>PSA 10 Avg</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#d6336c' }}>${averages.psa10}</div>
+            </div>
+          </div>
         </div>
       )}
 
