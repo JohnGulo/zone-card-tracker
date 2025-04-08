@@ -3,9 +3,21 @@ import fetch from 'node-fetch';
 
 const router = express.Router();
 
+// In-memory cache
+const cache = new Map();
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
 router.get('/search', async (req, res) => {
   const { cardName, gradedOnly, autosOnly, sortOrder } = req.query;
   const ebayAppId = process.env.EBAY_CLIENT_ID;
+  const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}-${sortOrder}`;
+
+  // Check cache
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) {
+    console.log(`✅ Cache hit for: ${cacheKey}`);
+    return res.json(cached.data);
+  }
 
   try {
     const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1?OPERATION-NAME=findCompletedItems';
@@ -29,7 +41,7 @@ router.get('/search', async (req, res) => {
     const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
 
     if (!items || items.length === 0) {
-      console.warn("\u26A0\uFE0F No items found for card:", cardName);
+      console.warn("⚠️ No items found for card:", cardName);
       return res.json({
         listings: [],
         averages: {
@@ -63,7 +75,6 @@ router.get('/search', async (req, res) => {
           else if (isRaw) rawPrices.push(price);
         }
 
-        // Apply grading/autograph filter
         if ((gradedOnly === 'true' && !isGraded) || (autosOnly === 'true' && !isAuto)) {
           return null;
         }
@@ -79,14 +90,22 @@ router.get('/search', async (req, res) => {
 
     const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
 
-    res.json({
+    const responseData = {
       listings,
       averages: {
         raw: avg(rawPrices),
         psa9: avg(psa9Prices),
         psa10: avg(psa10Prices)
       }
+    };
+
+    // Cache the result
+    cache.set(cacheKey, {
+      data: responseData,
+      expiresAt: Date.now() + CACHE_TTL
     });
+
+    res.json(responseData);
   } catch (error) {
     console.error('❌ Error fetching eBay sold data:', error.message);
     res.status(500).json({ error: 'Failed to fetch sold listing data from eBay.' });
