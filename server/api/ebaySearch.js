@@ -12,9 +12,10 @@ router.get('/search', async (req, res) => {
   try {
     EBAY_ACCESS_TOKEN = await getEbayAccessToken();
     console.log("✅ Using token:", EBAY_ACCESS_TOKEN?.substring(0, 20));
+    console.log("🔍 Searching sold listings for:", cardName);
 
     const response = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=100&filter=conditions:{1000}`,
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=100&filter=sold_status:TRUE`,
       {
         method: 'GET',
         headers: {
