@@ -9,8 +9,8 @@ const cache = new Map();
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 router.get('/search', async (req, res) => {
-  const { cardName, gradedOnly, autosOnly, sortOrder } = req.query;
-  const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}-${sortOrder}`;
+  const { cardName, gradedOnly, autosOnly } = req.query;
+  const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}`;
 
   // Check cache
   const cached = cache.get(cacheKey);
@@ -26,8 +26,7 @@ router.get('/search', async (req, res) => {
     const params = new URLSearchParams({
       q: cardName,
       limit: '100',
-      filter: 'conditionIds:{1000},price:[1..100000]',
-      sort: sortOrder === 'PriceHighest' ? 'price desc' : 'endTime desc'
+      filter: 'conditionIds:{1000},price:[1..100000]'
     });
 
     const response = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?${params.toString()}`, {
