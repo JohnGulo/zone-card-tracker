@@ -11,6 +11,25 @@ router.get('/search', async (req, res) => {
   const { cardName, gradedOnly, autosOnly, sortOrder = 'EndTimeSoonest' } = req.query;
   const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}-${sortOrder}`;
 
+  const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
+  const params = new URLSearchParams({
+    'OPERATION-NAME': 'findCompletedItems',
+    'SERVICE-VERSION': '1.13.0',
+    'SECURITY-APPNAME': process.env.EBAY_CLIENT_ID,
+    'RESPONSE-DATA-FORMAT': 'JSON',
+    'REST-PAYLOAD': 'true',
+    keywords: cardName,
+    'paginationInput.entriesPerPage': '50',
+    sortOrder,
+  });
+
+  // Add required filters
+  params.append('itemFilter(0).name', 'SoldItemsOnly');
+  params.append('itemFilter(0).value', 'true');
+
+  const fullUrl = `${endpoint}?${params.toString()}`;
+  console.log(`📡 Calling eBay API: ${fullUrl}`);
+
   // Check cache
   const cached = cache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
@@ -19,26 +38,10 @@ router.get('/search', async (req, res) => {
   }
 
   try {
-    const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
-    const params = new URLSearchParams({
-      'OPERATION-NAME': 'findCompletedItems',
-      'SERVICE-VERSION': '1.13.0',
-      'SECURITY-APPNAME': process.env.EBAY_CLIENT_ID,
-      'RESPONSE-DATA-FORMAT': 'JSON',
-      'REST-PAYLOAD': 'true',
-      keywords: cardName,
-      'paginationInput.entriesPerPage': '50',
-      sortOrder
-    });
-
-    params.append('itemFilter(0).name', 'SoldItemsOnly');
-    params.append('itemFilter(0).value', 'true');
-
-    const response = await fetch(`${endpoint}?${params.toString()}`);
+    const response = await fetch(fullUrl);
     const data = await response.json();
 
     const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-
     if (!items.length) {
       console.warn("⚠️ No items found for card:", cardName);
       return res.json({
@@ -51,37 +54,35 @@ router.get('/search', async (req, res) => {
     const psa9Prices = [];
     const psa10Prices = [];
 
-    const listings = items
-      .map(item => {
-        const title = item.title?.[0]?.toLowerCase() || '';
-        const price = parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0);
-        const image = item.galleryURL?.[0] || '';
-        const url = item.viewItemURL?.[0] || '';
+    const listings = items.map(item => {
+      const title = item.title?.[0]?.toLowerCase() || '';
+      const price = parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0);
+      const image = item.galleryURL?.[0] || '';
+      const url = item.viewItemURL?.[0] || '';
 
-        const isPSA10 = title.includes('psa 10');
-        const isPSA9 = title.includes('psa 9');
-        const isRaw = !title.includes('psa') && !title.includes('bgs') && !title.includes('sgc');
-        const isAuto = title.includes('auto');
-        const isGraded = title.includes('psa') || title.includes('bgs') || title.includes('sgc');
+      const isPSA10 = title.includes('psa 10');
+      const isPSA9 = title.includes('psa 9');
+      const isRaw = !title.includes('psa') && !title.includes('bgs') && !title.includes('sgc');
+      const isAuto = title.includes('auto');
+      const isGraded = title.includes('psa') || title.includes('bgs') || title.includes('sgc');
 
-        if (!isNaN(price)) {
-          if (isPSA10) psa10Prices.push(price);
-          else if (isPSA9) psa9Prices.push(price);
-          else if (isRaw) rawPrices.push(price);
-        }
+      if (!isNaN(price)) {
+        if (isPSA10) psa10Prices.push(price);
+        else if (isPSA9) psa9Prices.push(price);
+        else if (isRaw) rawPrices.push(price);
+      }
 
-        if ((gradedOnly === 'true' && !isGraded) || (autosOnly === 'true' && !isAuto)) {
-          return null;
-        }
+      if ((gradedOnly === 'true' && !isGraded) || (autosOnly === 'true' && !isAuto)) {
+        return null;
+      }
 
-        return {
-          title: item.title[0],
-          price: price.toFixed(2),
-          image,
-          url
-        };
-      })
-      .filter(Boolean);
+      return {
+        title: item.title[0],
+        price: price.toFixed(2),
+        image,
+        url
+      };
+    }).filter(Boolean);
 
     const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
 
@@ -99,9 +100,10 @@ router.get('/search', async (req, res) => {
       expiresAt: Date.now() + CACHE_TTL
     });
 
+    console.log(`✅ ${listings.length} listings returned for: ${cardName}`);
     res.json(responseData);
   } catch (error) {
-    console.error('❌ Error fetching eBay completed listing data:', error.message);
+    console.error('❌ Error fetching eBay completed listing data:', error);
     res.status(500).json({ error: 'Failed to fetch completed listing data from eBay.' });
   }
 });
