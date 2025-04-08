@@ -15,39 +15,30 @@ ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale, T
 
 export default function App() {
   const [cardName, setCardName] = useState('');
-  const [prices, setPrices] = useState([]);
+  const [allListings, setAllListings] = useState([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [enableAI, setEnableAI] = useState(false);
-  const [firstFive, setFirstFive] = useState([]);
-  const [otherListings, setOtherListings] = useState([]);
 
   const handleGenerate = async () => {
     if (!cardName) return;
 
     setLoading(true);
     setSummary('');
-    setPrices([]);
-    setFirstFive([]);
-    setOtherListings([]);
+    setAllListings([]);
 
     try {
-      const searchRes = await fetch(
+      const res = await fetch(
         'https://zone-card-tracker-production.up.railway.app/api/search?cardName=' +
           encodeURIComponent(cardName)
       );
-      const searchData = await searchRes.json();
+      const data = await res.json();
 
-      const listings = searchData.listings || [];
+      setAllListings(data.listings || []);
 
-      const extractedPrices = listings
-        .slice(0, 5)
+      const extractedPrices = data.listings
         .map((item) => parseFloat(item.price))
         .filter((price) => !isNaN(price));
-
-      setPrices(extractedPrices);
-      setFirstFive(listings.slice(0, 5));
-      setOtherListings(listings.slice(5));
 
       if (enableAI) {
         const summaryRes = await fetch(
@@ -69,12 +60,15 @@ export default function App() {
     setLoading(false);
   };
 
+  const chartPrices = allListings.slice(0, 5).map((item) => parseFloat(item.price) || 0);
+  const detailedListings = allListings.slice(5, 25);
+
   const chartData = {
-    labels: prices.map((_, i) => `Listing ${i + 1}`),
+    labels: chartPrices.map((_, i) => `Sale ${i + 1}`),
     datasets: [
       {
-        label: 'Price ($)',
-        data: prices,
+        label: 'Last 5 Sale Prices ($)',
+        data: chartPrices,
         borderColor: 'teal',
         backgroundColor: 'lightblue',
         tension: 0.3
@@ -83,7 +77,7 @@ export default function App() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '800px', margin: 'auto' }}>
+    <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px' }}>
       <h1>Card Pricing Tool</h1>
       <input
         type="text"
@@ -98,7 +92,7 @@ export default function App() {
             type="checkbox"
             checked={enableAI}
             onChange={() => setEnableAI(!enableAI)}
-          />
+          />{' '}
           Enable AI-powered summary
         </label>
       </div>
@@ -106,45 +100,46 @@ export default function App() {
         Track Prices
       </button>
 
-      {prices.length > 0 && (
-        <>
-          <div style={{ marginTop: '30px' }}>
-            <Line data={chartData} />
-          </div>
-
-          <div
-            style={{
-              marginTop: '20px',
-              backgroundColor: '#eef',
-              padding: '15px',
-              borderRadius: '5px'
-            }}
-          >
-            <h3>AI-Powered Summary:</h3>
-            {loading ? <p>Generating summary...</p> : <p>{summary}</p>}
-          </div>
-        </>
+      {chartPrices.length > 0 && (
+        <div style={{ marginTop: '30px' }}>
+          <Line data={chartData} />
+        </div>
       )}
 
-      {otherListings.length > 0 && (
-        <div style={{ marginTop: '40px' }}>
-          <h3>More Recent Sales</h3>
-          {otherListings.map((item, idx) => (
-            <div
-              key={idx}
-              style={{
-                borderBottom: '1px solid #ccc',
-                padding: '10px 0'
-              }}
-            >
-              <a href={item.url} target="_blank" rel="noopener noreferrer">
+      {summary && (
+        <div
+          style={{
+            marginTop: '20px',
+            backgroundColor: '#eef',
+            padding: '15px',
+            borderRadius: '5px'
+          }}
+        >
+          <h3>AI-Powered Summary:</h3>
+          {loading ? <p>Generating summary...</p> : <p>{summary}</p>}
+        </div>
+      )}
+
+      {detailedListings.length > 0 && (
+        <div style={{ marginTop: '30px' }}>
+          <h3>Recent Listings</h3>
+          <ul style={{ padding: 0, listStyle: 'none' }}>
+            {detailedListings.map((item, idx) => (
+              <li
+                key={idx}
+                style={{
+                  padding: '10px',
+                  marginBottom: '10px',
+                  border: '1px solid #ccc',
+                  borderRadius: '5px'
+                }}
+              >
                 <strong>{item.title}</strong>
-              </a>
-              <p style={{ margin: 0 }}>
-                💰 ${item.price.toFixed(2)} — {item.condition}
-              </p>
-            </div>
-          ))}
+                <br />
+                Price: ${item.price}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
