@@ -35,6 +35,7 @@ export default function App() {
           encodeURIComponent(cardName)
       );
       const data = await res.json();
+	console.log("✅ Fetched Data:", data); // ← ADD THIS LINE
       setListings(data.listings || []);
       setAverages(data.averages || { raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
 
