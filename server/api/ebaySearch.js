@@ -7,8 +7,11 @@ const router = express.Router();
 router.get('/search', async (req, res) => {
   const cardName = req.query.cardName;
 
+  let EBAY_ACCESS_TOKEN;
+
   try {
-    const EBAY_ACCESS_TOKEN = await getEbayAccessToken();
+    EBAY_ACCESS_TOKEN = await getEbayAccessToken();
+    console.log("✅ Using token:", EBAY_ACCESS_TOKEN?.substring(0, 20));
 
     const response = await fetch(
       `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=100&filter=conditions:{1000}`,
@@ -53,8 +56,9 @@ router.get('/search', async (req, res) => {
         psa10: avg(psa10Prices)
       }
     });
+
   } catch (error) {
-    console.error('Error fetching eBay data:', error);
+    console.error('❌ Error fetching eBay data:', error.message);
     res.status(500).json({ error: 'Failed to fetch data from eBay' });
   }
 });
