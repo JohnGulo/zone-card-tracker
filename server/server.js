@@ -43,8 +43,13 @@ app.get('/success', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/pages/success.html'));
 });
 
+app.get('/declined', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/pages/declined.html'));
+});
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
