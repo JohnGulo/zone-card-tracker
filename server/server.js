@@ -47,6 +47,10 @@ app.get('/declined', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/pages/declined.html'));
 });
 
+app.get('/about', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/pages/about.html'));
+});
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
