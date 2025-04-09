@@ -1,5 +1,6 @@
 import express from 'express';
 import fetch from 'node-fetch';
+import { getEbayAccessToken } from './getEbayAccessToken.js';
 
 const router = express.Router();
 
@@ -8,27 +9,8 @@ const cache = new Map();
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 router.get('/search', async (req, res) => {
-  const { cardName, gradedOnly, autosOnly, sortOrder = 'EndTimeSoonest' } = req.query;
+  const { cardName, gradedOnly, autosOnly, sortOrder = 'price desc' } = req.query;
   const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}-${sortOrder}`;
-
-  const endpoint = 'https://svcs.ebay.com/services/search/FindingService/v1';
-  const params = new URLSearchParams({
-    'OPERATION-NAME': 'findCompletedItems',
-    'SERVICE-VERSION': '1.13.0',
-    'SECURITY-APPNAME': process.env.EBAY_CLIENT_ID,
-    'RESPONSE-DATA-FORMAT': 'JSON',
-    'REST-PAYLOAD': 'true',
-    keywords: cardName,
-    'paginationInput.entriesPerPage': '50',
-    sortOrder,
-  });
-
-  // Add required filters
-  params.append('itemFilter(0).name', 'SoldItemsOnly');
-  params.append('itemFilter(0).value', 'true');
-
-  const fullUrl = `${endpoint}?${params.toString()}`;
-  console.log(`📡 Calling eBay API: ${fullUrl}`);
 
   // Check cache
   const cached = cache.get(cacheKey);
@@ -38,10 +20,24 @@ router.get('/search', async (req, res) => {
   }
 
   try {
-    const response = await fetch(fullUrl);
-    const data = await response.json();
+    const token = await getEbayAccessToken();
 
-    const items = data.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
+    const filters = ['sold_status:{SOLD}'];
+    if (gradedOnly === 'true') filters.push('(title:psa,title:bgs,title:sgc)');
+    if (autosOnly === 'true') filters.push('title:auto');
+
+    const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=50&filter=${filters.join(',')}&sort=${sortOrder}`;
+
+    const response = await fetch(endpoint, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+    const items = data.itemSummaries || [];
+
     if (!items.length) {
       console.warn("⚠️ No items found for card:", cardName);
       return res.json({
@@ -55,10 +51,10 @@ router.get('/search', async (req, res) => {
     const psa10Prices = [];
 
     const listings = items.map(item => {
-      const title = item.title?.[0]?.toLowerCase() || '';
-      const price = parseFloat(item.sellingStatus?.[0]?.currentPrice?.[0]?.__value__ || 0);
-      const image = item.galleryURL?.[0] || '';
-      const url = item.viewItemURL?.[0] || '';
+      const title = item.title?.toLowerCase() || '';
+      const price = parseFloat(item.price?.value || 0);
+      const image = item.image?.imageUrl || '';
+      const url = item.itemWebUrl || '';
 
       const isPSA10 = title.includes('psa 10');
       const isPSA9 = title.includes('psa 9');
@@ -77,7 +73,7 @@ router.get('/search', async (req, res) => {
       }
 
       return {
-        title: item.title[0],
+        title: item.title,
         price: price.toFixed(2),
         image,
         url
@@ -103,8 +99,8 @@ router.get('/search', async (req, res) => {
     console.log(`✅ ${listings.length} listings returned for: ${cardName}`);
     res.json(responseData);
   } catch (error) {
-    console.error('❌ Error fetching eBay completed listing data:', error);
-    res.status(500).json({ error: 'Failed to fetch completed listing data from eBay.' });
+    console.error('❌ Error fetching eBay sold listings:', error);
+    res.status(500).json({ error: 'Failed to fetch sold listing data from eBay.' });
   }
 });
 
