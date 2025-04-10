@@ -38,7 +38,7 @@ export default function App() {
       } else {
         setListings(data.listings);
         setAverages(data.averages);
-        setSortBy('default'); // Reset to default sort on new search
+        setSortBy('default'); // reset sort
       }
 
       const extractedPrices = data.listings
@@ -69,7 +69,7 @@ export default function App() {
   const sortedListings = [...listings].sort((a, b) => {
     if (sortBy === 'price-asc') return parseFloat(a.price) - parseFloat(b.price);
     if (sortBy === 'price-desc') return parseFloat(b.price) - parseFloat(a.price);
-    return 0; // default = most recent (server sorted)
+    return 0;
   });
 
   const formatDate = (isoString) => {
@@ -113,11 +113,41 @@ export default function App() {
 
       <button
         onClick={handleGenerate}
-        style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}
+        style={{
+          padding: '10px 20px',
+          backgroundColor: '#007bff',
+          color: '#fff',
+          fontWeight: 'bold',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
         disabled={loading}
       >
         {loading ? 'Loading...' : (<><span>Track Prices</span> <span style={{ fontSize: '18px' }}>📈</span></>)}
       </button>
+
+      {loading && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+          <div style={{
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #007bff',
+            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
 
       {errorMsg && (
         <div style={{ marginTop: '20px', color: 'red', fontWeight: 'bold' }}>
@@ -173,11 +203,11 @@ export default function App() {
       {sortedListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h3>
- 	 Sold Market Data{' '}
- 	 <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>
-  	  ({sortedListings.length} sales)
- 	 </span>
-	</h3>
+            Sold Market Data{' '}
+            <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>
+              ({sortedListings.length} sales)
+            </span>
+          </h3>
           <div style={{ marginBottom: '15px', textAlign: 'right' }}>
             <label>
               Sort Results By:{' '}
