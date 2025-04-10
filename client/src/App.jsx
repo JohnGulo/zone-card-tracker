@@ -173,9 +173,11 @@ export default function App() {
       {sortedListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h3>
-            Sold Market Data <span style={{ fontSize: '14px', color: '#666' }}>({sortedListings.length} sales)</span>
-          </h3>
-
+ 	 Sold Market Data{' '}
+ 	 <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>
+  	  ({sortedListings.length} sales)
+ 	 </span>
+	</h3>
           <div style={{ marginBottom: '15px', textAlign: 'right' }}>
             <label>
               Sort Results By:{' '}
