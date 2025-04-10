@@ -9,8 +9,8 @@ const cache = new Map();
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
 router.get('/search', async (req, res) => {
-  const { cardName, gradedOnly, autosOnly, sortOrder = 'price desc' } = req.query;
-  const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}-${sortOrder}`;
+  const { cardName, gradedOnly, autosOnly } = req.query;
+  const cacheKey = `${cardName}-${gradedOnly}-${autosOnly}`;
 
   // Check cache
   const cached = cache.get(cacheKey);
@@ -26,7 +26,7 @@ router.get('/search', async (req, res) => {
     if (gradedOnly === 'true') filters.push('(title:psa,title:bgs,title:sgc)');
     if (autosOnly === 'true') filters.push('title:auto');
 
-    const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=50&filter=${filters.join(',')}&sort=${sortOrder}`;
+    const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=50&filter=${filters.join(',')}`;
 
     const response = await fetch(endpoint, {
       headers: {
@@ -55,6 +55,7 @@ router.get('/search', async (req, res) => {
       const price = parseFloat(item.price?.value || 0);
       const image = item.image?.imageUrl || '';
       const url = item.itemWebUrl || '';
+      const date = item.itemEndDate || null;
 
       const isPSA10 = title.includes('psa 10');
       const isPSA9 = title.includes('psa 9');
@@ -76,7 +77,8 @@ router.get('/search', async (req, res) => {
         title: item.title,
         price: price.toFixed(2),
         image,
-        url
+        url,
+        date
       };
     }).filter(Boolean);
 

@@ -8,7 +8,7 @@ export default function App() {
   const [enableAI, setEnableAI] = useState(false);
   const [gradedOnly, setGradedOnly] = useState(false);
   const [autosOnly, setAutosOnly] = useState(false);
-  const [sortOrder, setSortOrder] = useState('EndTimeSoonest');
+  const [sortBy, setSortBy] = useState('default');
   const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -25,8 +25,7 @@ export default function App() {
       const queryParams = new URLSearchParams({
         cardName,
         gradedOnly: gradedOnly.toString(),
-        autosOnly: autosOnly.toString(),
-        sortOrder
+        autosOnly: autosOnly.toString()
       });
 
       const res = await fetch(
@@ -66,7 +65,20 @@ export default function App() {
     setLoading(false);
   };
 
-  const detailedListings = listings;
+  const sortedListings = [...listings].sort((a, b) => {
+    if (sortBy === 'price-asc') return parseFloat(a.price) - parseFloat(b.price);
+    if (sortBy === 'price-desc') return parseFloat(b.price) - parseFloat(a.price);
+    return 0;
+  });
+
+  const formatDate = (isoString) => {
+    if (!isoString) return '';
+    return new Date(isoString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   return (
     <div className="container" style={{ maxWidth: 800, margin: '0 auto', padding: '20px' }}>
@@ -86,12 +98,11 @@ export default function App() {
         <label><input type="checkbox" checked={gradedOnly} onChange={() => setGradedOnly(!gradedOnly)} /> Graded Cards Only</label>
         <label><input type="checkbox" checked={autosOnly} onChange={() => setAutosOnly(!autosOnly)} /> Autos Only</label>
         <label>
-          Sort By:{' '}
-          <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-            <option value="EndTimeSoonest">End Time Soonest</option>
-            <option value="EndTimeLatest">End Time Latest</option>
-            <option value="PricePlusShippingHighest">Price: High to Low</option>
-            <option value="PricePlusShippingLowest">Price: Low to High</option>
+          Sort Results By:{' '}
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="default">Default Order</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="price-asc">Price: Low to High</option>
           </select>
         </label>
       </div>
@@ -166,11 +177,11 @@ export default function App() {
         </div>
       )}
 
-      {detailedListings.length > 0 && (
+      {sortedListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
           <h3>Sold Market Data</h3>
           <ul style={{ padding: 0, listStyle: 'none' }}>
-            {detailedListings.map((item, idx) => (
+            {sortedListings.map((item, idx) => (
               <li
                 key={idx}
                 style={{
@@ -189,6 +200,11 @@ export default function App() {
                   <div style={{ color: 'green', fontSize: '20px', fontWeight: 'bold' }}>
                     ${item.price}
                   </div>
+                  {item.date && (
+                    <div style={{ fontSize: '14px', color: '#555' }}>
+                      Sold on: {formatDate(item.date)}
+                    </div>
+                  )}
                   {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer">View on eBay</a>}
                 </div>
               </li>
