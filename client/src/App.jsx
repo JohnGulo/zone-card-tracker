@@ -94,6 +94,27 @@ export default function App() {
         onChange={(e) => setCardName(e.target.value)}
         style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
       />
+<div
+  style={{
+    backgroundColor: '#e8f0fe',
+    border: '1px solid #c3dafe',
+    borderRadius: '10px',
+    padding: '15px',
+    marginBottom: '15px',
+    color: '#1a3d8f',
+    fontSize: '14px',
+    lineHeight: '1.5'
+  }}
+>
+  <strong>Search Tips:</strong>
+  <ul style={{ paddingLeft: '20px', marginTop: '8px' }}>
+    <li>Include <em>year</em>, <em>product name</em>, and <em>player name</em> (e.g., <code>2020 Topps Chrome Luis Robert</code>)</li>
+    <li>Use <strong>brackets</strong> to search variations (e.g., <code>(PSA, BGS)</code>)</li>
+    <li>Use a <strong>minus</strong> to exclude (e.g., <code>-box -case -break</code>)</li>
+    <li>Use <strong>&</strong> to match all terms (e.g., <code>Charizard PSA&10</code>)</li>
+  </ul>
+</div>
+
 
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '10px' }}>
         <label><input type="checkbox" checked={gradedOnly} onChange={() => setGradedOnly(!gradedOnly)} /> Graded Cards Only</label>
