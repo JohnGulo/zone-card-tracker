@@ -26,7 +26,9 @@ router.get('/search', async (req, res) => {
     if (gradedOnly === 'true') filters.push('(title:psa,title:bgs,title:sgc)');
     if (autosOnly === 'true') filters.push('title:auto');
 
-    const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=50&filter=${filters.join(',')}`;
+    // Sort by end date descending to show most recent listings first
+    const sort = 'itemEndDate DESC';
+    const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(cardName)}&limit=50&filter=${filters.join(',')}&sort=${encodeURIComponent(sort)}`;
 
     const response = await fetch(endpoint, {
       headers: {

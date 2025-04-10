@@ -38,6 +38,7 @@ export default function App() {
       } else {
         setListings(data.listings);
         setAverages(data.averages);
+        setSortBy('default'); // Reset to default sort on new search
       }
 
       const extractedPrices = data.listings
@@ -68,7 +69,7 @@ export default function App() {
   const sortedListings = [...listings].sort((a, b) => {
     if (sortBy === 'price-asc') return parseFloat(a.price) - parseFloat(b.price);
     if (sortBy === 'price-desc') return parseFloat(b.price) - parseFloat(a.price);
-    return 0;
+    return 0; // default = most recent (server sorted)
   });
 
   const formatDate = (isoString) => {
@@ -97,14 +98,6 @@ export default function App() {
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '10px' }}>
         <label><input type="checkbox" checked={gradedOnly} onChange={() => setGradedOnly(!gradedOnly)} /> Graded Cards Only</label>
         <label><input type="checkbox" checked={autosOnly} onChange={() => setAutosOnly(!autosOnly)} /> Autos Only</label>
-        <label>
-          Sort Results By:{' '}
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="default">Default Order</option>
-            <option value="price-desc">Price: High to Low</option>
-            <option value="price-asc">Price: Low to High</option>
-          </select>
-        </label>
       </div>
 
       <div style={{ marginBottom: '20px' }}>
@@ -179,7 +172,21 @@ export default function App() {
 
       {sortedListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h3>Sold Market Data</h3>
+          <h3>
+            Sold Market Data <span style={{ fontSize: '14px', color: '#666' }}>({sortedListings.length} sales)</span>
+          </h3>
+
+          <div style={{ marginBottom: '15px', textAlign: 'right' }}>
+            <label>
+              Sort Results By:{' '}
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                <option value="default">Most Recent</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="price-asc">Price: Low to High</option>
+              </select>
+            </label>
+          </div>
+
           <ul style={{ padding: 0, listStyle: 'none' }}>
             {sortedListings.map((item, idx) => (
               <li
