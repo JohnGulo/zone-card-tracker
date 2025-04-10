@@ -11,6 +11,8 @@ export default function App() {
   const [sortBy, setSortBy] = useState('default');
   const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
   const [errorMsg, setErrorMsg] = useState('');
+  const [showTips, setShowTips] = useState(false);
+  const [resultCount, setResultCount] = useState(0);
 
   const handleGenerate = async () => {
     if (!cardName) return;
@@ -20,6 +22,7 @@ export default function App() {
     setListings([]);
     setErrorMsg('');
     setAverages({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
+    setResultCount(0);
 
     try {
       const queryParams = new URLSearchParams({
@@ -38,7 +41,8 @@ export default function App() {
       } else {
         setListings(data.listings);
         setAverages(data.averages);
-        setSortBy('default'); // reset sort
+        setResultCount(data.count || data.listings.length);
+        setSortBy('default'); // reset sort each new search
       }
 
       const extractedPrices = data.listings
@@ -94,40 +98,17 @@ export default function App() {
         onChange={(e) => setCardName(e.target.value)}
         style={{ width: '100%', padding: '10px', marginBottom: '10px' }}
       />
-const [showTip, setShowTip] = useState(false);
-<div style={{ marginBottom: '10px' }}>
-  <button
-    onClick={() => setShowTip(!showTip)}
-    style={{
-      backgroundColor: '#1a3d8f',
-      color: '#fff',
-      padding: '6px 12px',
-      borderRadius: '5px',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '14px'
-    }}
-  >
-    {showTip ? 'Hide Search Tip' : 'Show Search Tip'}
-  </button>
 
-  {showTip && (
-    <div
-      style={{
-        marginTop: '10px',
-        backgroundColor: '#e8f0fe',
-        border: '1px solid #c3dafe',
-        borderRadius: '10px',
-        padding: '12px 16px',
-        fontSize: '14px',
-        color: '#1a3d8f'
-      }}
-    >
-      <strong>Search Tip:</strong> Be as specific as possible. Include years, product names, variation names,
-      or card numbering (e.g., <code>/150</code>) to get more accurate and faster analysis results.
-    </div>
-  )}
-</div>
+      <div style={{ marginBottom: '10px' }}>
+        <button onClick={() => setShowTips(!showTips)} style={{ fontSize: '14px', padding: '4px 8px' }}>
+          {showTips ? 'Hide Search Tips' : 'Show Search Tips'}
+        </button>
+        {showTips && (
+          <div style={{ fontSize: '14px', backgroundColor: '#f9f9f9', padding: '10px', border: '1px solid #ddd', marginTop: '6px', borderRadius: '4px' }}>
+            Be as specific as possible. Include years, product names, variation names, or card numbering (e.g., "/150") to get more accurate and faster analysis results.
+          </div>
+        )}
+      </div>
 
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '10px' }}>
         <label><input type="checkbox" checked={gradedOnly} onChange={() => setGradedOnly(!gradedOnly)} /> Graded Cards Only</label>
@@ -146,45 +127,35 @@ const [showTip, setShowTip] = useState(false);
       </div>
 
       <button
-  onClick={handleGenerate}
-  style={{
-    width: '100%',
-    padding: '12px',
-    fontWeight: 'bold',
-    backgroundColor: '#0070f3',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px'
-  }}
-  disabled={loading}
->
-        {loading ? 'Loading...' : (<><span>Track Prices</span> <span style={{ fontSize: '18px' }}>📈</span></>)}
+        onClick={handleGenerate}
+        style={{
+          width: '100%',
+          padding: '12px',
+          fontSize: '16px',
+          backgroundColor: '#007BFF',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer'
+        }}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <span className="spinner" style={{
+              width: '18px',
+              height: '18px',
+              border: '3px solid #fff',
+              borderTop: '3px solid transparent',
+              borderRadius: '50%',
+              display: 'inline-block',
+              marginRight: '10px',
+              animation: 'spin 1s linear infinite'
+            }} />
+            Loading...
+          </>
+        ) : 'Track Prices 📈'}
       </button>
-
-      {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-          <div style={{
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #007bff',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <style>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}</style>
-        </div>
-      )}
 
       {errorMsg && (
         <div style={{ marginTop: '20px', color: 'red', fontWeight: 'bold' }}>
@@ -194,12 +165,10 @@ const [showTip, setShowTip] = useState(false);
 
       {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
         <div style={{ marginTop: '30px' }}>
-          <h3 style={{ marginTop: '25px', textAlign: 'center' }}>
-  	Sold Market Summary
-  	<div style={{ fontSize: '14px', fontWeight: 'normal', color: '#555', marginTop: '5px' }}>
-   	 based on sold listings below
- 	 </div>
-	</h3>
+          <h3 style={{ marginTop: '25px', textAlign: 'center' }}>Sold Market Summary</h3>
+          <p style={{ textAlign: 'center', marginTop: '-10px', fontStyle: 'italic', fontSize: '14px' }}>
+            based on sold listings below
+          </p>
           <div
             style={{
               marginTop: '10px',
@@ -246,8 +215,8 @@ const [showTip, setShowTip] = useState(false);
         <div style={{ marginTop: '30px' }}>
           <h3>
             Sold Market Data{' '}
-            <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#333' }}>
-              ({sortedListings.length} sales)
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>
+              ({resultCount} sales)
             </span>
           </h3>
           <div style={{ marginBottom: '15px', textAlign: 'right' }}>
@@ -293,6 +262,16 @@ const [showTip, setShowTip] = useState(false);
           </ul>
         </div>
       )}
+
+      {/* Inline spinner animation */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   );
 }
