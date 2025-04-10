@@ -112,21 +112,24 @@ export default function App() {
       </div>
 
       <button
-        onClick={handleGenerate}
-        style={{
-          padding: '10px 20px',
-          backgroundColor: '#007bff',
-          color: '#fff',
-          fontWeight: 'bold',
-          border: 'none',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-        disabled={loading}
-      >
+  onClick={handleGenerate}
+  style={{
+    width: '100%',
+    padding: '12px',
+    fontWeight: 'bold',
+    backgroundColor: '#0070f3',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px'
+  }}
+  disabled={loading}
+>
         {loading ? 'Loading...' : (<><span>Track Prices</span> <span style={{ fontSize: '18px' }}>📈</span></>)}
       </button>
 
