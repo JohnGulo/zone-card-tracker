@@ -157,7 +157,12 @@ export default function App() {
 
       {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
         <div style={{ marginTop: '30px' }}>
-          <h3 style={{ marginTop: '25px', textAlign: 'center' }}>Sold Market Summary</h3>
+          <h3 style={{ marginTop: '25px', textAlign: 'center' }}>
+  	Sold Market Summary
+  	<div style={{ fontSize: '14px', fontWeight: 'normal', color: '#555', marginTop: '5px' }}>
+   	 based on sold listings below
+ 	 </div>
+	</h3>
           <div
             style={{
               marginTop: '10px',
