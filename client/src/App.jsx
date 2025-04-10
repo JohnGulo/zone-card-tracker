@@ -42,7 +42,7 @@ export default function App() {
         setListings(data.listings);
         setAverages(data.averages);
         setResultCount(data.count || data.listings.length);
-        setSortBy('default'); // reset sort each new search
+        setSortBy('default');
       }
 
       const extractedPrices = data.listings
@@ -100,9 +100,17 @@ export default function App() {
       />
 
       <div style={{ marginBottom: '10px' }}>
-        <button onClick={() => setShowTips(!showTips)} style={{ fontSize: '14px', padding: '4px 8px' }}>
+        <span
+          onClick={() => setShowTips(!showTips)}
+          style={{
+            fontSize: '14px',
+            color: '#007BFF',
+            cursor: 'pointer',
+            textDecoration: 'underline'
+          }}
+        >
           {showTips ? 'Hide Search Tips' : 'Show Search Tips'}
-        </button>
+        </span>
         {showTips && (
           <div style={{ fontSize: '14px', backgroundColor: '#f9f9f9', padding: '10px', border: '1px solid #ddd', marginTop: '6px', borderRadius: '4px' }}>
             Be as specific as possible. Include years, product names, variation names, or card numbering (e.g., "/150") to get more accurate and faster analysis results.
@@ -132,26 +140,18 @@ export default function App() {
           width: '100%',
           padding: '12px',
           fontSize: '16px',
-          backgroundColor: '#007BFF',
+          backgroundColor: loading ? '#0056b3' : '#007BFF',
           color: '#fff',
           border: 'none',
           borderRadius: '6px',
-          cursor: 'pointer'
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'background-color 0.3s ease'
         }}
         disabled={loading}
       >
         {loading ? (
           <>
-            <span className="spinner" style={{
-              width: '18px',
-              height: '18px',
-              border: '3px solid #fff',
-              borderTop: '3px solid transparent',
-              borderRadius: '50%',
-              display: 'inline-block',
-              marginRight: '10px',
-              animation: 'spin 1s linear infinite'
-            }} />
+            <span className="spinner-ring" />
             Loading...
           </>
         ) : 'Track Prices 📈'}
@@ -197,81 +197,4 @@ export default function App() {
         </div>
       )}
 
-      {summary && (
-        <div
-          style={{
-            marginTop: '20px',
-            backgroundColor: '#eef',
-            padding: '15px',
-            borderRadius: '5px'
-          }}
-        >
-          <h3>AI-Powered Summary:</h3>
-          {loading ? <p>Generating summary...</p> : <p>{summary}</p>}
-        </div>
-      )}
-
-      {sortedListings.length > 0 && (
-        <div style={{ marginTop: '30px' }}>
-          <h3>
-            Sold Market Data{' '}
-            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#333' }}>
-              ({resultCount} sales)
-            </span>
-          </h3>
-          <div style={{ marginBottom: '15px', textAlign: 'right' }}>
-            <label>
-              Sort Results By:{' '}
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="default">Most Recent</option>
-                <option value="price-desc">Price: High to Low</option>
-                <option value="price-asc">Price: Low to High</option>
-              </select>
-            </label>
-          </div>
-
-          <ul style={{ padding: 0, listStyle: 'none' }}>
-            {sortedListings.map((item, idx) => (
-              <li
-                key={idx}
-                style={{
-                  padding: '10px',
-                  marginBottom: '10px',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '15px'
-                }}
-              >
-                {item.image && <img src={item.image} alt="card" style={{ width: '80px', height: 'auto' }} />}
-                <div>
-                  <strong>{item.title}</strong>
-                  <div style={{ color: 'green', fontSize: '20px', fontWeight: 'bold' }}>
-                    ${item.price}
-                  </div>
-                  {item.date && (
-                    <div style={{ fontSize: '14px', color: '#555' }}>
-                      Sold on: {formatDate(item.date)}
-                    </div>
-                  )}
-                  {item.url && <a href={item.url} target="_blank" rel="noopener noreferrer">View on eBay</a>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Inline spinner animation */}
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}
-      </style>
-    </div>
-  );
-}
+      {summary
