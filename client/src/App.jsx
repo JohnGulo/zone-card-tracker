@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 
 export default function App() {
   const [cardName, setCardName] = useState('');
-  const [listings, setListings] = useState([]);
   const [soldListings, setSoldListings] = useState([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [enableAI, setEnableAI] = useState(false);
   const [gradedOnly, setGradedOnly] = useState(false);
   const [autosOnly, setAutosOnly] = useState(false);
-  const [sortBy, setSortBy] = useState('default');
   const [averages, setAverages] = useState({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
   const [errorMsg, setErrorMsg] = useState('');
   const [showTips, setShowTips] = useState(false);
@@ -20,45 +18,42 @@ export default function App() {
 
     setLoading(true);
     setSummary('');
-    setListings([]);
     setErrorMsg('');
     setAverages({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
     setResultCount(0);
     setSoldListings([]);
 
     try {
-      const queryParams = new URLSearchParams({
-        cardName,
-        gradedOnly: gradedOnly.toString(),
-        autosOnly: autosOnly.toString()
-      });
-
       const res = await fetch(
-        `https://zone-card-tracker-production.up.railway.app/api/search?${queryParams}`
+        `https://zone-card-tracker-production.up.railway.app/api/marketplace-insights?query=${encodeURIComponent(cardName)}`
       );
       const data = await res.json();
 
-      if (!data.listings || data.listings.length === 0) {
-        setErrorMsg("No results found. Please check the card name spelling or try another search.");
-      } else {
-        setListings(data.listings);
-        setAverages(data.averages);
-        setResultCount(data.count || data.listings.length);
-        setSortBy('default');
+      if (!data.itemSales || data.itemSales.length === 0) {
+        setErrorMsg("No sold listings found. Please check the card name or try again.");
+        setLoading(false);
+        return;
       }
 
-      const extractedPrices = data.listings
-        .slice(0, 5)
-        .map((item) => parseFloat(item.price))
-        .filter((price) => !isNaN(price));
+      setSoldListings(data.itemSales);
+      setResultCount(data.itemSales.length);
 
-      if (enableAI) {
+      const prices = data.itemSales
+        .map(item => parseFloat(item.price?.value))
+        .filter(price => !isNaN(price));
+
+      const avg = (arr) =>
+        arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
+
+      setAverages({ raw: avg(prices), psa9: 'N/A', psa10: 'N/A' });
+
+      if (enableAI && prices.length > 0) {
         const summaryRes = await fetch(
           'https://zone-card-tracker-production.up.railway.app/api/generate-summary',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cardName, prices: extractedPrices })
+            body: JSON.stringify({ cardName, prices })
           }
         );
         const summaryData = await summaryRes.json();
@@ -71,38 +66,6 @@ export default function App() {
 
     setLoading(false);
   };
-
-  const handleSoldListings = async () => {
-    if (!cardName) return;
-
-    setLoading(true);
-    setErrorMsg('');
-    setSoldListings([]);
-
-    try {
-      const res = await fetch(
-        `https://zone-card-tracker-production.up.railway.app/api/marketplace-insights?query=${encodeURIComponent(cardName)}`
-      );
-      const data = await res.json();
-
-      if (data.itemSales?.length > 0) {
-        setSoldListings(data.itemSales);
-      } else {
-        setErrorMsg('No sold listings found using Marketplace Insights.');
-      }
-    } catch (err) {
-      console.error('Sold API Error:', err);
-      setErrorMsg('Failed to fetch sold listings.');
-    }
-
-    setLoading(false);
-  };
-
-  const sortedListings = [...listings].sort((a, b) => {
-    if (sortBy === 'price-asc') return parseFloat(a.price) - parseFloat(b.price);
-    if (sortBy === 'price-desc') return parseFloat(b.price) - parseFloat(a.price);
-    return 0;
-  });
 
   const formatDate = (isoString) => {
     if (!isoString) return '';
@@ -180,27 +143,50 @@ export default function App() {
         {loading ? 'Loading...' : 'Track Prices 📈'}
       </button>
 
-      <button
-        onClick={handleSoldListings}
-        style={{
-          width: '100%',
-          padding: '12px',
-          marginTop: '10px',
-          fontSize: '16px',
-          backgroundColor: '#28a745',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: loading ? 'not-allowed' : 'pointer'
-        }}
-        disabled={loading}
-      >
-        {loading ? 'Fetching Sold Data...' : 'Fetch Sold Listings 🔍'}
-      </button>
-
       {errorMsg && (
         <div style={{ marginTop: '20px', color: 'red', fontWeight: 'bold' }}>
           {errorMsg}
+        </div>
+      )}
+
+      {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
+        <div style={{ marginTop: '30px' }}>
+          <h3 style={{ textAlign: 'center' }}>Sold Market Summary</h3>
+          <p style={{ textAlign: 'center', marginTop: '-10px', fontStyle: 'italic', fontSize: '14px' }}>
+            based on sold listings below
+          </p>
+          <div
+            style={{
+              marginTop: '10px',
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              backgroundColor: '#f4f4f4',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '1px solid #ccc'
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>Raw Avg</div>
+              <div style={{ fontSize: '22px', color: '#333' }}>${averages.raw}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>PSA 9 Avg</div>
+              <div style={{ fontSize: '22px', color: '#444' }}>${averages.psa9}</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: '#d6336c' }}>PSA 10 Avg</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: '#d6336c' }}>${averages.psa10}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {summary && (
+        <div style={{ marginTop: '30px', backgroundColor: '#fef9e7', padding: '15px', borderRadius: '6px' }}>
+          <h4>AI Summary:</h4>
+          <p>{summary}</p>
         </div>
       )}
 
