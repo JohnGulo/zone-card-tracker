@@ -30,7 +30,7 @@ export default function App() {
       const data = await res.json();
 
       if (!data.itemSales || data.itemSales.length === 0) {
-        setErrorMsg("No sold listings found. Please check the card name or try again.");
+        setErrorMsg("No listings found. Please check the card name or try again.");
         setLoading(false);
         return;
       }
@@ -151,9 +151,9 @@ export default function App() {
 
       {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
         <div style={{ marginTop: '30px' }}>
-          <h3 style={{ textAlign: 'center' }}>Sold Market Summary</h3>
+          <h3 style={{ textAlign: 'center' }}>Market Summary</h3>
           <p style={{ textAlign: 'center', marginTop: '-10px', fontStyle: 'italic', fontSize: '14px' }}>
-            based on sold listings below
+            based on listings below
           </p>
           <div
             style={{
@@ -192,15 +192,60 @@ export default function App() {
 
       {soldListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h3>Recent Sold Listings (Marketplace Insights)</h3>
-          <ul>
+          <h3>Live eBay Listings</h3>
+          <div>
             {soldListings.map((item, idx) => (
-              <li key={idx} style={{ marginBottom: '10px' }}>
-                <strong>{item.title}</strong><br />
-                Sold for ${item.price?.value} on {formatDate(item.soldDate)}
-              </li>
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  marginBottom: '20px',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  backgroundColor: '#fdfdfd'
+                }}
+              >
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  style={{
+                    width: '100px',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    marginRight: '15px',
+                    borderRadius: '4px'
+                  }}
+                />
+                <div style={{ flex: 1 }}>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontWeight: 'bold',
+                      fontSize: '16px',
+                      textDecoration: 'none',
+                      color: '#333'
+                    }}
+                  >
+                    {item.title}
+                  </a>
+                  <div style={{ marginTop: '6px', fontSize: '15px' }}>
+                    <span style={{ color: 'green', fontWeight: 'bold' }}>
+                      ${item.price?.value} {item.price?.currency || 'USD'}
+                    </span>
+                    {item.soldDate && (
+                      <span style={{ marginLeft: '10px', color: '#888', fontStyle: 'italic' }}>
+                        Sold on {formatDate(item.soldDate)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
     </div>

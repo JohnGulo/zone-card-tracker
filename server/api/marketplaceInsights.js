@@ -26,7 +26,7 @@ router.get('/marketplace-insights', async (req, res) => {
 
     const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(
       query
-    )}&limit=25&filter=buyingOptions:{FIXED_PRICE}`;
+    )}&limit=50&filter=buyingOptions:{FIXED_PRICE}`;
 
     const response = await fetch(endpoint, {
       headers: {
