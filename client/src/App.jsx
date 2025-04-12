@@ -38,22 +38,36 @@ export default function App() {
       setSoldListings(data.itemSales);
       setResultCount(data.itemSales.length);
 
-      const prices = data.itemSales
-        .map(item => parseFloat(item.price?.value))
-        .filter(price => !isNaN(price));
+      const psa10 = [];
+      const psa9 = [];
+      const raw = [];
+
+      data.itemSales.forEach(item => {
+        const title = item.title?.toLowerCase() || '';
+        const price = parseFloat(item.price?.value);
+        if (isNaN(price)) return;
+
+        if (title.includes('psa 10')) psa10.push(price);
+        else if (title.includes('psa 9')) psa9.push(price);
+        else if (!title.includes('psa') && !title.includes('bgs') && !title.includes('sgc')) raw.push(price);
+      });
 
       const avg = (arr) =>
         arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
 
-      setAverages({ raw: avg(prices), psa9: 'N/A', psa10: 'N/A' });
+      setAverages({
+        raw: avg(raw),
+        psa9: avg(psa9),
+        psa10: avg(psa10)
+      });
 
-      if (enableAI && prices.length > 0) {
+      if (enableAI && [...psa10, ...psa9, ...raw].length > 0) {
         const summaryRes = await fetch(
           'https://zone-card-tracker-production.up.railway.app/api/generate-summary',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cardName, prices })
+            body: JSON.stringify({ cardName, prices: [...psa10, ...psa9, ...raw] })
           }
         );
         const summaryData = await summaryRes.json();
@@ -233,14 +247,28 @@ export default function App() {
                     {item.title}
                   </a>
                   <div style={{ marginTop: '6px', fontSize: '15px' }}>
-                    <span style={{ color: 'green', fontWeight: 'bold' }}>
+                    <div style={{ color: 'green', fontWeight: 'bold', fontSize: '24px' }}>
                       ${item.price?.value} {item.price?.currency || 'USD'}
-                    </span>
+                    </div>
                     {item.soldDate && (
-                      <span style={{ marginLeft: '10px', color: '#888', fontStyle: 'italic' }}>
+                      <div style={{ color: '#888', fontStyle: 'italic', marginTop: '2px' }}>
                         Sold on {formatDate(item.soldDate)}
-                      </span>
+                      </div>
                     )}
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        fontSize: '14px',
+                        textDecoration: 'underline',
+                        color: '#007BFF',
+                        marginTop: '4px'
+                      }}
+                    >
+                      View on eBay
+                    </a>
                   </div>
                 </div>
               </div>
