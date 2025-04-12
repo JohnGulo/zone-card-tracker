@@ -17,16 +17,16 @@ router.get('/marketplace-insights', async (req, res) => {
   const cacheKey = `insights-${query.toLowerCase()}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() < cached.expiresAt) {
-    console.log(`✅ [CACHE HIT] Marketplace Insights for: ${query}`);
+    console.log(`✅ [CACHE HIT] Active Listings for: ${query}`);
     return res.json(cached.data);
   }
 
   try {
     const token = await getEbayAccessToken();
 
-    const endpoint = `https://api.ebay.com/buy/marketplace_insights/v1/item_sales/search?q=${encodeURIComponent(
+    const endpoint = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(
       query
-    )}&filter=sold_status:{SOLD}&limit=50`;
+    )}&limit=25&filter=buyingOptions:{FIXED_PRICE}`;
 
     const response = await fetch(endpoint, {
       headers: {
@@ -38,16 +38,16 @@ router.get('/marketplace-insights', async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('❌ eBay API Error:', data);
+      console.error('❌ eBay Browse API Error:', data);
       return res.status(response.status).json({ error: data });
     }
 
-    const itemSales = (data.itemSales || []).map(item => ({
+    const itemSales = (data.itemSummaries || []).map(item => ({
       title: item.title,
       price: item.price,
-      soldDate: item.soldDate,
       image: item.image?.imageUrl || '',
-      url: item.itemWebUrl || ''
+      url: item.itemWebUrl || '',
+      soldDate: null // no sold date available from live listings
     }));
 
     const responseData = { itemSales };
@@ -57,11 +57,11 @@ router.get('/marketplace-insights', async (req, res) => {
       expiresAt: Date.now() + CACHE_TTL
     });
 
-    console.log(`✅ [LIVE FETCH] ${itemSales.length} sold items for: ${query}`);
+    console.log(`✅ [LIVE FETCH] ${itemSales.length} active listings for: ${query}`);
     res.json(responseData);
   } catch (error) {
-    console.error('❌ Marketplace Insights fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch from Marketplace Insights API' });
+    console.error('❌ Browse API fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch from Browse API' });
   }
 });
 
