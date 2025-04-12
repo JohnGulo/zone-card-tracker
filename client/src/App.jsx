@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export default function App() {
   const [cardName, setCardName] = useState('');
   const [listings, setListings] = useState([]);
+  const [soldListings, setSoldListings] = useState([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [enableAI, setEnableAI] = useState(false);
@@ -23,6 +24,7 @@ export default function App() {
     setErrorMsg('');
     setAverages({ raw: 'N/A', psa9: 'N/A', psa10: 'N/A' });
     setResultCount(0);
+    setSoldListings([]);
 
     try {
       const queryParams = new URLSearchParams({
@@ -65,6 +67,32 @@ export default function App() {
     } catch (err) {
       console.error('Error:', err);
       setErrorMsg('Something went wrong. Please try again later.');
+    }
+
+    setLoading(false);
+  };
+
+  const handleSoldListings = async () => {
+    if (!cardName) return;
+
+    setLoading(true);
+    setErrorMsg('');
+    setSoldListings([]);
+
+    try {
+      const res = await fetch(
+        `https://zone-card-tracker-production.up.railway.app/api/marketplace-insights?query=${encodeURIComponent(cardName)}`
+      );
+      const data = await res.json();
+
+      if (data.itemSales?.length > 0) {
+        setSoldListings(data.itemSales);
+      } else {
+        setErrorMsg('No sold listings found using Marketplace Insights.');
+      }
+    } catch (err) {
+      console.error('Sold API Error:', err);
+      setErrorMsg('Failed to fetch sold listings.');
     }
 
     setLoading(false);
@@ -149,12 +177,25 @@ export default function App() {
         }}
         disabled={loading}
       >
-        {loading ? (
-          <>
-            <span className="spinner-ring" />
-            Loading...
-          </>
-        ) : 'Track Prices 📈'}
+        {loading ? 'Loading...' : 'Track Prices 📈'}
+      </button>
+
+      <button
+        onClick={handleSoldListings}
+        style={{
+          width: '100%',
+          padding: '12px',
+          marginTop: '10px',
+          fontSize: '16px',
+          backgroundColor: '#28a745',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: loading ? 'not-allowed' : 'pointer'
+        }}
+        disabled={loading}
+      >
+        {loading ? 'Fetching Sold Data...' : 'Fetch Sold Listings 🔍'}
       </button>
 
       {errorMsg && (
@@ -163,38 +204,19 @@ export default function App() {
         </div>
       )}
 
-      {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
+      {soldListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h3 style={{ marginTop: '25px', textAlign: 'center' }}>Sold Market Summary</h3>
-          <p style={{ textAlign: 'center', marginTop: '-10px', fontStyle: 'italic', fontSize: '14px' }}>
-            based on sold listings below
-          </p>
-          <div
-            style={{
-              marginTop: '10px',
-              display: 'flex',
-              justifyContent: 'space-around',
-              alignItems: 'center',
-              backgroundColor: '#f4f4f4',
-              padding: '20px',
-              borderRadius: '8px',
-              border: '1px solid #ccc'
-            }}
-          >
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>Raw Avg</div>
-              <div style={{ fontSize: '22px', color: '#333' }}>${averages.raw}</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>PSA 9 Avg</div>
-              <div style={{ fontSize: '22px', color: '#444' }}>${averages.psa9}</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '16px', fontWeight: '700', color: '#d6336c' }}>PSA 10 Avg</div>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: '#d6336c' }}>${averages.psa10}</div>
-            </div>
-          </div>
+          <h3>Recent Sold Listings (Marketplace Insights)</h3>
+          <ul>
+            {soldListings.map((item, idx) => (
+              <li key={idx} style={{ marginBottom: '10px' }}>
+                <strong>{item.title}</strong><br />
+                Sold for ${item.price?.value} on {formatDate(item.soldDate)}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-
-      {summary
+    </div>
+  );
+}
