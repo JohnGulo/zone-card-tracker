@@ -165,7 +165,7 @@ export default function App() {
 
       {(averages.raw !== 'N/A' || averages.psa9 !== 'N/A' || averages.psa10 !== 'N/A') && (
         <div style={{ marginTop: '30px' }}>
-          <h3 style={{ textAlign: 'center' }}>Market Summary</h3>
+          <h3 style={{ textAlign: 'center' }}>Sold Market Summary</h3>
           <p style={{ textAlign: 'center', marginTop: '-10px', fontStyle: 'italic', fontSize: '14px' }}>
             based on listings below
           </p>
@@ -206,7 +206,7 @@ export default function App() {
 
       {soldListings.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h3>Live eBay Listings</h3>
+          <h3>Sold eBay Listings</h3>
           <div>
             {soldListings.map((item, idx) => (
               <div
