@@ -8,6 +8,7 @@ import generateSummary from './api/generateSummary.js';
 import ebayDeletion from './api/ebayDeletion.js';
 import marketplaceInsights from './api/marketplaceInsights.js';
 import ebaySearch from './api/ebaySearch.js'; // ✅ New: add this line
+import ebayTest from './api/ebayTest.js';
 
 console.log("OPENAI_API_KEY from .env:", process.env.OPENAI_API_KEY);
 
@@ -21,6 +22,8 @@ app.use(cors({
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+app.use('/api', ebayTest);
 
 app.use(express.json());
 
