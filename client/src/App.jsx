@@ -25,53 +25,43 @@ export default function App() {
 
     try {
       const res = await fetch(
-        `https://zone-card-tracker-production.up.railway.app/api/marketplace-insights?query=${encodeURIComponent(cardName)}`
+        `https://zone-card-tracker-production.up.railway.app/api/search?cardName=${encodeURIComponent(cardName)}&gradedOnly=${gradedOnly}&autosOnly=${autosOnly}`
       );
+
       const data = await res.json();
 
-      if (!data.itemSales || data.itemSales.length === 0) {
+      if (!data.listings || data.listings.length === 0) {
         setErrorMsg("No listings found. Please check the card name or try again.");
         setLoading(false);
         return;
       }
 
-      setSoldListings(data.itemSales);
-      setResultCount(data.itemSales.length);
-
-      const psa10 = [];
-      const psa9 = [];
-      const raw = [];
-
-      data.itemSales.forEach(item => {
-        const title = item.title?.toLowerCase() || '';
-        const price = parseFloat(item.price?.value);
-        if (isNaN(price)) return;
-
-        if (title.includes('psa 10')) psa10.push(price);
-        else if (title.includes('psa 9')) psa9.push(price);
-        else if (!title.includes('psa') && !title.includes('bgs') && !title.includes('sgc')) raw.push(price);
-      });
-
-      const avg = (arr) =>
-        arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 'N/A';
+      setSoldListings(data.listings);
+      setResultCount(data.listings.length);
 
       setAverages({
-        raw: avg(raw),
-        psa9: avg(psa9),
-        psa10: avg(psa10)
+        raw: data.averages.raw,
+        psa9: data.averages.psa9,
+        psa10: data.averages.psa10
       });
 
-      if (enableAI && [...psa10, ...psa9, ...raw].length > 0) {
-        const summaryRes = await fetch(
-          'https://zone-card-tracker-production.up.railway.app/api/generate-summary',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cardName, prices: [...psa10, ...psa9, ...raw] })
-          }
-        );
-        const summaryData = await summaryRes.json();
-        setSummary(summaryData.summary || 'No summary returned.');
+      if (enableAI) {
+        const allPrices = data.listings
+          .map(item => parseFloat(item.price))
+          .filter(p => !isNaN(p));
+
+        if (allPrices.length > 0) {
+          const summaryRes = await fetch(
+            'https://zone-card-tracker-production.up.railway.app/api/generate-summary',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cardName, prices: allPrices })
+            }
+          );
+          const summaryData = await summaryRes.json();
+          setSummary(summaryData.summary || 'No summary returned.');
+        }
       }
     } catch (err) {
       console.error('Error:', err);
@@ -248,11 +238,11 @@ export default function App() {
                   </a>
                   <div style={{ marginTop: '6px', fontSize: '15px' }}>
                     <div style={{ color: 'green', fontWeight: 'bold', fontSize: '24px' }}>
-                      ${item.price?.value} {item.price?.currency || 'USD'}
+                      ${item.price}
                     </div>
-                    {item.soldDate && (
+                    {item.date && (
                       <div style={{ color: '#888', fontStyle: 'italic', marginTop: '2px' }}>
-                        Sold on {formatDate(item.soldDate)}
+                        Sold on {formatDate(item.date)}
                       </div>
                     )}
                     <a

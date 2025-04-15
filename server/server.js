@@ -4,15 +4,14 @@ import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// ✅ Only the API routes you're still using
 import generateSummary from './api/generateSummary.js';
 import ebayDeletion from './api/ebayDeletion.js';
 import marketplaceInsights from './api/marketplaceInsights.js';
+import ebaySearch from './api/ebaySearch.js'; // ✅ New: add this line
 
 console.log("OPENAI_API_KEY from .env:", process.env.OPENAI_API_KEY);
 
 const app = express();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,10 +27,11 @@ app.use(express.json());
 // Serve static HTML pages
 app.use('/pages', express.static(path.join(__dirname, 'public/pages')));
 
-// ✅ Only the routes currently used by your frontend
+// ✅ Mount API routes
 app.use('/api', generateSummary);
 app.use('/api', ebayDeletion);
-app.use('/api', marketplaceInsights); // 🎯 Only sold listings route in use
+app.use('/api', marketplaceInsights);
+app.use('/api', ebaySearch); // ✅ New: mounts /api/search route
 
 // Static route redirects
 app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public/pages/privacy.html')));
